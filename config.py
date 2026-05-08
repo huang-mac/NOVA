@@ -85,10 +85,32 @@ def get_milvus_config():
         dict: Milvus 连接配置
     """
     return {
-        "uri": os.getenv("MILVUS_URI", "./milvus_lite.db"),  # Milvus Lite 文件模式
+        # "uri": os.getenv("MILVUS_URI", "./milvus_lite.db"),  # Milvus Lite 文件模式
         # 生产环境示例：
-        # "uri": os.getenv("MILVUS_URI", "http://localhost:19530"),
+        "uri": os.getenv("MILVUS_URI", "http://114.132.151.31:19530"),
         # "token": os.getenv("MILVUS_TOKEN", ""),
+    }
+
+
+# ============================================================
+# Embeddings 配置（独立于 LLM，支持混元等兼容服务）
+# ============================================================
+def get_embeddings_config():
+    """
+    获取 Embeddings 模型配置参数。
+
+    支持任何兼容 OpenAI /embeddings 接口的服务，如：
+      - 腾讯混元（hunyuan-embedding, 1024 维）
+      - OpenAI（text-embedding-3-small, 1536 维）
+
+    Returns:
+        dict: 包含 api_key, base_url, model, dimension 的配置字典
+    """
+    return {
+        "api_key": os.getenv("EMBEDDING_API_KEY", os.getenv("OPENAI_API_KEY", "sk-your-key-here")),
+        "base_url": os.getenv("EMBEDDING_BASE_URL", os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")),
+        "model": os.getenv("EMBEDDING_MODEL", "text-embedding-3-small"),
+        "dimension": int(os.getenv("EMBEDDING_DIMENSION", "1536")),
     }
 
 
@@ -103,7 +125,7 @@ def get_embeddings():
     获取 LangChain OpenAIEmbeddings 实例（单例模式）。
 
     Embeddings 用于将文本转换为向量，是 RAG 检索的核心组件。
-    向量维度需与 Milvus 集合定义一致，默认 1536（text-embedding-3-small）。
+    优先使用 EMBEDDING_* 环境变量，未设置则回退到 LLM 配置。
 
     Returns:
         OpenAIEmbeddings: 向量嵌入模型实例
@@ -115,11 +137,13 @@ def get_embeddings():
 
     from langchain_openai import OpenAIEmbeddings
 
-    config = get_llm_config()
+    config = get_embeddings_config()
     _embeddings_instance = OpenAIEmbeddings(
         api_key=config["api_key"],
         base_url=config["base_url"],
-        model="text-embedding-3-small",  # 1536 维
+        model=config["model"],
+        dimensions=config["dimension"],
+        check_embedding_ctx_length=False,  # 混元等兼容服务不支持 token ID，需传原始文本
     )
     return _embeddings_instance
 
