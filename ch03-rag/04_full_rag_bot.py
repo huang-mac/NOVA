@@ -195,6 +195,7 @@ class RAGCustomerServiceBot:
             "question": user_input,
         })
 
+        print(f"{standalone_question}")
         # Step 2: 检索知识库
         docs = self.retriever.invoke(standalone_question)
         context = format_docs(docs)
@@ -209,7 +210,7 @@ class RAGCustomerServiceBot:
         # Step 4: 保存到记忆（滑动窗口裁切）
         self.messages.append(HumanMessage(content=user_input))
         self.messages.append(AIMessage(content=answer))
-        max_size = self.window_size * 2
+        max_size = self.window_size * 2 # 每轮 2 条(客服和人)
         if len(self.messages) > max_size:
             self.messages = self.messages[-max_size:]
 
