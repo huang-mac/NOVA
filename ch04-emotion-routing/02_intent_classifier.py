@@ -16,11 +16,13 @@
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "ch01-basics"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from pydantic import BaseModel, Field
 from enum import Enum
 from langchain_openai import ChatOpenAI
+from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 from config import get_llm_config
 
 
@@ -82,28 +84,28 @@ class IntentClassifier:
     """
     用户意图分类器。
 
-    将用户消息分类为预定义的意图类别，
-    并提取关键实体信息。
+    使用 PydanticOutputParser 让 LLM 输出结构化 JSON，
+    不依赖原生 response_format API，兼容更多模型/API。
     """
 
     # 意图对应的处理方式
     INTENT_ACTIONS = {
-        IntentType.PRODUCT_INQUIRY: "rag_query",    # RAG 知识库检索
+        IntentType.PRODUCT_INQUIRY: "rag_query",
         IntentType.PRICE_INQUIRY: "rag_query",
-        IntentType.REFUND: "create_ticket",          # 创建工单
+        IntentType.REFUND: "create_ticket",
         IntentType.RETURN: "create_ticket",
         IntentType.EXCHANGE: "create_ticket",
-        IntentType.WARRANTY: "rag_query_or_ticket",  # 先查知识库，不行再建工单
+        IntentType.WARRANTY: "rag_query_or_ticket",
         IntentType.REPAIR: "create_ticket",
         IntentType.DELIVERY: "rag_query",
-        IntentType.TRACKING: "create_ticket",        # 查订单需要建工单
+        IntentType.TRACKING: "create_ticket",
         IntentType.TROUBLESHOOT: "rag_query",
         IntentType.USAGE_GUIDE: "rag_query",
-        IntentType.COMPLAINT: "escalate",            # 投诉直接转人工
-        IntentType.ESCALATION: "escalate",           # 要求转人工
-        IntentType.FEEDBACK: "create_ticket",        # 反馈记录为工单
-        IntentType.GREETING: "greeting",             # 问候
-        IntentType.UNKNOWN: "llm_fallback",          # 兜底由 LLM 回答
+        IntentType.COMPLAINT: "escalate",
+        IntentType.ESCALATION: "escalate",
+        IntentType.FEEDBACK: "create_ticket",
+        IntentType.GREETING: "greeting",
+        IntentType.UNKNOWN: "llm_fallback",
     }
 
     def __init__(self):
@@ -114,16 +116,11 @@ class IntentClassifier:
             model=config["model_name"],
             temperature=0.1,
         )
-        self.chain = self.llm.with_structured_output(IntentClassification)
 
-    def classify(self, user_message: str) -> IntentClassification:
-        """分类用户消息的意图。"""
-        intent_descriptions = "\n".join(
-            f"- {intent.value}: {intent.name}"
-            for intent in IntentType
-        )
+        self.parser = PydanticOutputParser(pydantic_object=IntentClassification)
 
-        prompt = f"""分析用户消息的意图类别。
+        self.prompt = ChatPromptTemplate.from_messages([
+            ("human", """分析用户消息的意图类别。
 
 可选意图类别：
 {intent_descriptions}
@@ -136,8 +133,25 @@ class IntentClassifier:
 3. 置信度如何？
 4. 消息中提到的实体（产品名、订单号、问题现象等）？
 5. 一句话总结用户想做什么？
-"""
-        return self.chain.invoke(prompt)
+
+{format_instructions}"""),
+        ]).partial(
+            format_instructions=self.parser.get_format_instructions(),
+        )
+
+        self.chain = self.prompt | self.llm | self.parser
+
+    def classify(self, user_message: str) -> IntentClassification:
+        """分类用户消息的意图。"""
+        intent_descriptions = "\n".join(
+            f"- {intent.value}: {intent.name}"
+            for intent in IntentType
+        )
+
+        return self.chain.invoke({
+            "user_message": user_message,
+            "intent_descriptions": intent_descriptions,
+        })
 
     def get_action(self, intent: IntentType) -> str:
         """根据意图获取对应的处理动作。"""

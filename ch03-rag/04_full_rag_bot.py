@@ -19,6 +19,9 @@
 
 import sys
 import os
+
+from pymilvus import MilvusClient
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "ch01-basics"))
 
 from langchain_community.document_loaders import TextLoader
@@ -96,38 +99,49 @@ def format_chat_history(history_key="chat_history"):
 
 def get_or_build_vectorstore(embeddings, collection_name="customer_service_kb"):
     """
-    加载已有 Milvus 集合，不存在则从文档创建。
+    适配 langchain-milvus 0.3.3 + pymilvus 2.6+ 的正确代码
     """
     milvus_config = get_milvus_config()
-    connection_args = {"uri": milvus_config["uri"]}
+    uri = milvus_config["uri"]
 
-    try:
+    # ==============================
+    # 新版官方客户端：唯一正确方式
+    # ==============================
+    client = MilvusClient(uri=uri)
+    collection_exists = client.has_collection(collection_name)
+
+    if collection_exists:
+        print("从已有 Milvus 集合加载...")
         vectorstore = Milvus(
             embedding_function=embeddings,
-            connection_args=connection_args,
             collection_name=collection_name,
-        )
-        vectorstore.similarity_search("测试", k=1)
-        print("从已有 Milvus 集合加载...")
-        return vectorstore
-    except Exception:
-        print("创建新的 Milvus 集合...")
-        knowledge_dir = os.path.join(os.path.dirname(__file__), "..", "knowledge_base")
-        doc_path = os.path.join(knowledge_dir, "product_knowledge.md")
-        loader = TextLoader(doc_path, encoding="utf-8")
-        docs = loader.load()
-        splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-        chunks = splitter.split_documents(docs)
-
-        vectorstore = Milvus.from_documents(
-            documents=chunks,
-            embedding=embeddings,
-            connection_args=connection_args,
-            collection_name=collection_name,
-            drop_old=True,
+            connection_args={"uri": uri},
+            auto_id=True,
         )
         return vectorstore
 
+    # ==============================
+    # 创建新集合
+    # ==============================
+    print("创建新的 Milvus 集合...")
+    knowledge_dir = os.path.join(os.path.dirname(__file__), "..", "knowledge_base")
+    doc_path = os.path.join(knowledge_dir, "product_knowledge.md")
+
+    loader = TextLoader(doc_path, encoding="utf-8")
+    docs = loader.load()
+
+    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+    chunks = splitter.split_documents(docs)
+
+    vectorstore = Milvus.from_documents(
+        documents=chunks,
+        embedding=embeddings,
+        collection_name=collection_name,
+        connection_args={"uri": uri},
+        drop_old=True,
+        auto_id=True,
+    )
+    return vectorstore
 
 class RAGCustomerServiceBot:
     """

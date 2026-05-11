@@ -16,12 +16,14 @@
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "ch01-basics"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from pydantic import BaseModel, Field
 from enum import Enum
 from typing import Optional
 from langchain_openai import ChatOpenAI
+from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 from config import get_llm_config
 
 
@@ -68,34 +70,23 @@ class EmotionDetector:
     """
     用户情绪检测器。
 
-    使用 LLM 分析用户消息中的情绪信息，
-    返回结构化的情绪分析结果。
+    使用 PydanticOutputParser 让 LLM 输出结构化 JSON，
+    不依赖原生 response_format API，兼容更多模型/API。
     """
 
     def __init__(self):
         config = get_llm_config()
-        # 情绪分析用低温度，保证分类稳定性
         self.llm = ChatOpenAI(
             api_key=config["api_key"],
             base_url=config["base_url"],
             model=config["model_name"],
-            temperature=0.1,  # 极低温度，减少随机性
+            temperature=0.1,
         )
 
-        # 构建结构化输出链
-        self.chain = self.llm.with_structured_output(EmotionAnalysis)
+        self.parser = PydanticOutputParser(pydantic_object=EmotionAnalysis)
 
-    def analyze(self, user_message: str) -> EmotionAnalysis:
-        """
-        分析用户消息的情绪。
-
-        Args:
-            user_message: 用户的输入文本
-
-        Returns:
-            EmotionAnalysis: 结构化的情绪分析结果
-        """
-        prompt = f"""分析以下用户消息的情绪状态。
+        self.prompt = ChatPromptTemplate.from_messages([
+            ("human", """分析以下用户消息的情绪状态。
 
 用户消息：「{user_message}」
 
@@ -105,8 +96,19 @@ class EmotionDetector:
 3. 哪些词语反映了这种情绪？
 4. 判断依据是什么？
 5. 是否需要转人工处理？（情绪强度>=8 或 情绪为 angry 时建议转人工）
-"""
-        return self.chain.invoke(prompt)
+
+{format_instructions}"""),
+        ]).partial(
+            format_instructions=self.parser.get_format_instructions(),
+        )
+
+        self.chain = self.prompt | self.llm | self.parser
+
+    def analyze(self, user_message: str) -> EmotionAnalysis:
+        """
+        分析用户消息的情绪。
+        """
+        return self.chain.invoke({"user_message": user_message})
 
     def get_emotion_emoji(self, emotion_type: EmotionType) -> str:
         """根据情绪类型返回对应的 emoji。"""

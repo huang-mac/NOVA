@@ -137,17 +137,20 @@ class EscalationManager:
         Returns:
             tuple[EscalationRequest, HumanAgent] 或 None（无可用坐席或队列为空）
         """
-        # 找到空闲坐席
+        # 优先找空闲坐席，找不到再找未满的坐席
         available_agent = None
         for agent in self._agents.values():
             if agent.status == AgentStatus.AVAILABLE:
                 available_agent = agent
                 break
-            elif len(agent.active_sessions) < agent.max_concurrent:
-                available_agent = agent
-                break
 
-        if not available_agent or not self._queue:
+        if available_agent is None:
+            for agent in self._agents.values():
+                if len(agent.active_sessions) < agent.max_concurrent:
+                    available_agent = agent
+                    break
+
+        if available_agent is None or not self._queue:
             return None
 
         # 取出队首请求
@@ -157,7 +160,7 @@ class EscalationManager:
         request.assigned_agent = available_agent.agent_id
         request.status = "assigned"
         available_agent.active_sessions.append(request.session_id)
-        available_agent.handled_count += 1
+        available_agent.status = AgentStatus.BUSY
 
         print(f"  ✅ 坐席分配: {available_agent.name} ← 请求 {request.request_id}")
 
@@ -170,18 +173,17 @@ class EscalationManager:
 
         return request, available_agent
 
-    def complete_session(self, request_id: str, agent_id: str, resolution: str):
+    def complete_session(self, session_id: str, agent_id: str, resolution: str):
         """标记会话处理完成。"""
         agent = self._agents.get(agent_id)
-        if agent:
-            # 从坐席的活跃会话中移除
-            agent.active_sessions = [
-                s for s in agent.active_sessions
-                if s != f"request-{request_id}"
-            ]
+        if agent and session_id in agent.active_sessions:
+            agent.active_sessions.remove(session_id)
             agent.handled_count += 1
+            # 释放后有空位则恢复为可用
+            if len(agent.active_sessions) < agent.max_concurrent:
+                agent.status = AgentStatus.AVAILABLE
 
-        print(f"  🏁 会话 {request_id} 处理完成")
+        print(f"  🏁 会话 {session_id} 处理完成")
         print(f"     处理结果: {resolution}")
 
     def get_handoff_context(self, request_id: str) -> Optional[dict]:
@@ -239,24 +241,24 @@ def main():
             "session_id": "session-001",
             "user_id": "user-001",
             "reason": "耳机质量问题，用户强烈不满",
-            "context": "用户张三反映 StarPods Pro 右耳有杂音，已尝试重置但仍存在问题。用户情绪愤怒，强度 9/10。",
-            "emotion": "angry",
+            "context_summary": "用户张三反映 StarPods Pro 右耳有杂音，已尝试重置但仍存在问题。用户情绪愤怒，强度 9/10。",
+            "emotion_type": "angry",
             "priority": "urgent",
         },
         {
             "session_id": "session-002",
             "user_id": "user-002",
             "reason": "订单物流问题",
-            "context": "用户李四的订单已下单5天未发货，多次催促。情绪烦躁，强度 6/10。",
-            "emotion": "frustrated",
+            "context_summary": "用户李四的订单已下单5天未发货，多次催促。情绪烦躁，强度 6/10。",
+            "emotion_type": "frustrated",
             "priority": "normal",
         },
         {
             "session_id": "session-003",
             "user_id": "user-003",
             "reason": "技术问题需要人工排查",
-            "context": "用户王五的 StarWatch X 屏幕偶发黑屏，已提供基础排查步骤但未解决。",
-            "emotion": "confused",
+            "context_summary": "用户王五的 StarWatch X 屏幕偶发黑屏，已提供基础排查步骤但未解决。",
+            "emotion_type": "confused",
             "priority": "normal",
         },
     ]
@@ -281,14 +283,13 @@ def main():
         result = manager.assign_agent()
         if result:
             req, agent = result
-            context = manager.get_handoff_context(req.request_id)
 
-            # 展示交接信息
+            # 展示交接信息（直接使用返回的 req 对象）
             print(f"\n  📋 交接信息 → {agent.name}:")
-            print(f"     用户ID: {context['user_id']}")
-            print(f"     原因: {context['reason']}")
-            print(f"     上下文: {context['context_summary'][:80]}...")
-            print(f"     情绪: {context['emotion_type']} | 优先级: {context['priority']}")
+            print(f"     用户ID: {req.user_id}")
+            print(f"     原因: {req.reason}")
+            print(f"     上下文: {req.context_summary[:80]}...")
+            print(f"     情绪: {req.emotion_type} | 优先级: {req.priority}")
             print()
         else:
             print("  ⏳ 无可用坐席，等待中...")
@@ -302,7 +303,7 @@ def main():
     for req in requests:
         if req.assigned_agent:
             manager.complete_session(
-                request_id=req.request_id,
+                session_id=req.session_id,
                 agent_id=req.assigned_agent,
                 resolution="已为用户安排退货/已联系物流/已安排检修",
             )
