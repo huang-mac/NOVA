@@ -93,7 +93,7 @@ def basic_tool_call():
         print("\n--- 执行工具调用 ---")
         for tc in response.tool_calls:
             tool_name = tc["name"]
-            tool_args = tc["args"]22
+            tool_args = tc["args"]
 
             # 找到对应的工具并执行
             if tool_name == "multiply":
