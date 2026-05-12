@@ -177,13 +177,12 @@ def build_loop_graph():
     """构建带循环的状态机。"""
     graph = StateGraph(LoopState)
 
-    graph.add_node("increment", increment)
+    graph.add_node("increment",increment)
 
     graph.add_edge("__start__", "increment")
-    # increment 执行完后，根据条件决定继续还是结束
     graph.add_conditional_edges("increment", should_continue, {
-        "continue": "increment",  # 继续循环
-        "done": END,              # 结束
+        "continue": "increment",
+        "done": END,
     })
 
     return graph.compile()
