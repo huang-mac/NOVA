@@ -1,0 +1,29 @@
+# 所有文本文件统一换行符为 LF
+* text=auto eol=lf
+
+# Python 文件
+*.py text eol=lf
+
+# Markdown 文件
+*.md text eol=lf
+
+# 配置文件
+*.toml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.cfg text eol=lf
+.env.example text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+requirements.txt text eol=lf
+
+# 二进制文件
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.db binary
+*.sqlite3 binary

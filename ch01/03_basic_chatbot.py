@@ -15,7 +15,7 @@
     3. 简单的关键词意图识别（后续章节会用 LLM 替代）
 
 运行方式：
-    cd ch01-basics
+    cd ch01
     python 03_basic_chatbot.py
 """
 

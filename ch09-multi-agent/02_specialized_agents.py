@@ -12,7 +12,7 @@ import sys
 import os
 import json
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "ch01-basics"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import tool

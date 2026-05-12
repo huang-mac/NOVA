@@ -1,6 +1,6 @@
 """
 ===============================================
-第八章 示例 2：客服场景的 Tool 实现
+第七章 示例 2：客服场景的 Tool 实现
 ===============================================
 目标：定义一组客服常用的工具（查订单、查物流、查库存），模拟真实业务数据。
 
@@ -12,7 +12,7 @@ import os
 import json
 from datetime import datetime, timedelta
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "ch01-basics"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from langchain_core.tools import tool
 
@@ -210,7 +210,7 @@ def get_customer_tools():
 # ============================================================
 if __name__ == "__main__":
     print("=" * 60)
-    print("第八章 示例 2：客服场景 Tool 测试")
+    print("第七章 示例 2：客服场景 Tool 测试")
     print("=" * 60)
 
     tools = get_customer_tools()

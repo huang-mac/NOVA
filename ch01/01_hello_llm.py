@@ -10,7 +10,7 @@
     3. invoke() 方法发送消息并获取回复
 
 运行方式：
-    cd ch01-basics
+    cd ch01
     python 01_hello_llm.py
 """
 

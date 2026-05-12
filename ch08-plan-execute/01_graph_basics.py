@@ -12,7 +12,7 @@ LangGraph 是 LangChain 生态里用来构建"有状态的 AI 工作流"的框�
 import sys
 import os
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "ch01-basics"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from typing import TypedDict, Annotated
 from langgraph.graph import StateGraph, END

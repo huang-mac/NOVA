@@ -1,6 +1,6 @@
 """
 ===============================================
-第八章 示例 4：多 Tool 协作 Agent
+第七章 示例 4：多 Tool 协作 Agent
 ===============================================
 目标：实现一个带多个客服工具的 Agent，LLM 自动判断需要调用几个工具，
      并综合多个工具的结果生成最终回复。
@@ -12,7 +12,7 @@ import sys
 import os
 import json
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "ch01-basics"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from langchain_core.messages import (
     HumanMessage,
@@ -282,7 +282,7 @@ def run_test(question: str, description: str):
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("第八章 示例 4：多 Tool 协作 Agent")
+    print("第七章 示例 4：多 Tool 协作 Agent")
     print("=" * 60)
 
     # 测试 1：单个工具调用

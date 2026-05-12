@@ -10,7 +10,7 @@
     3. 使用 ChatPromptTemplate 模板化管理提示词
 
 运行方式：
-    cd ch01-basics
+    cd ch01
     python 02_system_prompt.py
 """
 

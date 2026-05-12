@@ -1,6 +1,6 @@
 """
 ===============================================
-第八章 示例 3：Tool 场景的 Prompt 工程
+第七章 示例 3：Tool 场景的 Prompt 工程
 ===============================================
 目标：演示如何通过 Prompt 优化 LLM 使用 Tool 的效果。
 
@@ -15,7 +15,7 @@ import sys
 import os
 import json
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "ch01-basics"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from config import get_llm
@@ -196,7 +196,7 @@ def demo_ask_for_info():
 # ============================================================
 if __name__ == "__main__":
     print("=" * 60)
-    print("第八章 示例 3：Tool 场景的 Prompt 工程")
+    print("第七章 示例 3：Tool 场景的 Prompt 工程")
     print("=" * 60)
 
     # 对比好提示词 vs 坏提示词

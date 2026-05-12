@@ -85,9 +85,10 @@ def get_milvus_config():
         dict: Milvus 连接配置
     """
     return {
-        # "uri": os.getenv("MILVUS_URI", "./milvus_lite.db"),  # Milvus Lite 文件模式
-        # 生产环境示例：
-        "uri": os.getenv("MILVUS_URI", "http://114.132.151.31:19530"),
+        # 本地开发用 Milvus Lite（文件模式，零部署）
+        "uri": os.getenv("MILVUS_URI", "./milvus_lite.db"),
+        # 生产环境连接远程 Milvus Server：
+        # "uri": os.getenv("MILVUS_URI", "http://your-milvus-server:19530"),
         # "token": os.getenv("MILVUS_TOKEN", ""),
     }
 

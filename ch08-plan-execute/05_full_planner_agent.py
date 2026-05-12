@@ -12,7 +12,7 @@ import sys
 import os
 import json
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "ch01-basics"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from typing import TypedDict, Annotated, Literal
 from langgraph.graph import StateGraph, END

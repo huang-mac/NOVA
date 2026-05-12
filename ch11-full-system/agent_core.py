@@ -34,7 +34,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 # 确保能导入 config
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "ch01-basics"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 # ============================================================
@@ -311,7 +311,7 @@ class RAGEngine:
         if use_vector_db and milvus_uri:
             try:
                 from langchain_milvus import Milvus
-                sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "ch01-basics"))
+                sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
                 from config import get_embeddings, get_milvus_config
                 embeddings = get_embeddings()
                 uri = milvus_uri or get_milvus_config()["uri"]

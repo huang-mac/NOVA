@@ -1,6 +1,6 @@
 """
 ===============================================
-第八章 示例 1：Tool 基础概念
+第七章 示例 1：Tool 基础概念
 ===============================================
 目标：理解 LangChain Tool 的定义方式、绑定方式，以及 Function Call 的完整生命周期。
 
@@ -12,7 +12,7 @@ import sys
 import os
 
 # 把共享配置加入路径
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "ch01-basics"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
@@ -156,7 +156,7 @@ def no_tool_needed():
 # ============================================================
 if __name__ == "__main__":
     print("=" * 60)
-    print("第八章 示例 1：Tool 基础概念")
+    print("第七章 示例 1：Tool 基础概念")
     print("=" * 60)
 
     # 先看看工具长什么样

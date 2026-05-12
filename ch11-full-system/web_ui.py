@@ -12,6 +12,7 @@
     需要先启动 API 服务: python api_server.py
 """
 
+import os
 import streamlit as st
 import requests
 import uuid
@@ -83,7 +84,10 @@ st.markdown("""
 # API 客户端
 # ============================================================
 
-API_BASE = st.secrets.get("API_BASE", "http://localhost:8000")
+try:
+    API_BASE = st.secrets.get("API_BASE", "http://localhost:8000")
+except Exception:
+    API_BASE = os.environ.get("API_BASE", "http://localhost:8000")
 
 
 def send_message(session_id: str, user_message: str, user_id: str = "web-user") -> dict:
